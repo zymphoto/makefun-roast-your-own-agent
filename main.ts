@@ -18,9 +18,13 @@ if (LINE.length < 1 || LINE.length > 200 || LINE.includes("\n")) {
   throw new Error("LINE must be a single line of 1-200 characters");
 }
 
+process.umask(0o022);
 mkdirSync("/output", { recursive: true });
-writeFileSync("/output/entry.txt", LINE + "\n", "utf8");
+writeFileSync("/output/entry.txt", LINE + "\n", { encoding: "utf8", mode: 0o644 });
 // make.fun collects outputs as another user, so leave them
 // world-readable regardless of this machine's umask.
-chmodSync("/output", 0o755);
-chmodSync("/output/entry.txt", 0o644);
+// Best effort only: the grader may run as a different user on a
+// pre-created /output it does not own, so a chmod failure must
+// never fail the run.
+try { chmodSync("/output", 0o755); } catch {}
+try { chmodSync("/output/entry.txt", 0o644); } catch {}
